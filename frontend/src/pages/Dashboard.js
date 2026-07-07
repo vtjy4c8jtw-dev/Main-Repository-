@@ -19,7 +19,7 @@ export default function Dashboard() {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
 
-  const unit = athlete?.measurement_preference === 'Imperial' ? 'mi' : 'km';
+  const unit = athlete?.measurement_preference === 'feet' ? 'mi' : 'km';
 
   useEffect(() => {
     let cancelled = false;

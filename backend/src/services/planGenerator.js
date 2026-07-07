@@ -33,6 +33,14 @@ function isoDate(date) {
   return date.toISOString().slice(0, 10);
 }
 
+// All physiological targets (peak long run, volume multipliers, etc.) are
+// tuned in real kilometers, so distances are only converted to the
+// athlete's display unit at the point they're written to the output.
+function kmToUnit(km, unit) {
+  const value = unit === 'mi' ? km * 0.621371 : km;
+  return Math.round(value * 10) / 10;
+}
+
 function phaseForWeek(weekIndex, nonTaperWeeks) {
   const ratio = (weekIndex + 1) / nonTaperWeeks;
   if (ratio <= 0.4) return 'Base';
@@ -94,7 +102,13 @@ function weekDayPlan({ phase, weekInPhaseIdx, daysPerWeek, weeklyKm, longRunKm, 
 
   if (isRaceWeek) {
     // Light week: a couple short shakeouts, mostly rest.
-    days[2] = { day: 'Wed', type: 'Shakeout', targetDistanceKm: 3, targetPace: easyPace, description: 'Short easy shakeout run with a few strides.' };
+    days[2] = {
+      day: 'Wed',
+      type: 'Shakeout',
+      targetDistanceKm: unit === 'mi' ? 2 : 3,
+      targetPace: easyPace,
+      description: 'Short easy shakeout run with a few strides.',
+    };
     return days;
   }
 
@@ -129,7 +143,7 @@ function weekDayPlan({ phase, weekInPhaseIdx, daysPerWeek, weeklyKm, longRunKm, 
 }
 
 function generatePlan({ goal, goalDate, daysPerWeek = 5, currentFitness, paceZones, bestRecentEffort, measurementPreference }) {
-  const unit = measurementPreference === 'Imperial' ? 'mi' : 'km';
+  const unit = measurementPreference === 'feet' ? 'mi' : 'km';
   const distanceKm = RACE_PRESETS[goal] || Number(goal) || 10;
   const profile = closestGoalProfile(distanceKm);
   const zones = paceZones;
@@ -191,15 +205,16 @@ function generatePlan({ goal, goalDate, daysPerWeek = 5, currentFitness, paceZon
       longRunKm = Math.min(baselineLongKm + (peakLongKm - baselineLongKm) * progress, peakLongKm);
     }
 
-    weeklyKm = Math.round(weeklyKm * 10) / 10;
-    longRunKm = Math.round((isRaceWeek ? longRunKm : Math.min(longRunKm, weeklyKm * 0.42)) * 10) / 10;
+    if (!isRaceWeek) longRunKm = Math.min(longRunKm, weeklyKm * 0.42);
+    const weeklyDisplay = kmToUnit(weeklyKm, unit);
+    const longRunDisplay = kmToUnit(longRunKm, unit);
 
     const days = weekDayPlan({
       phase,
       weekInPhaseIdx: phaseCounters[phase] || 0,
       daysPerWeek,
-      weeklyKm,
-      longRunKm,
+      weeklyKm: weeklyDisplay,
+      longRunKm: longRunDisplay,
       zones,
       racePaceSecPerKm,
       unit,
@@ -211,8 +226,8 @@ function generatePlan({ goal, goalDate, daysPerWeek = 5, currentFitness, paceZon
       weekNumber: w + 1,
       weekStart: isoDate(weekStart),
       phase,
-      targetDistanceKm: weeklyKm,
-      targetLongRunKm: longRunKm,
+      targetDistanceKm: weeklyDisplay,
+      targetLongRunKm: longRunDisplay,
       days,
     });
   }
@@ -223,8 +238,8 @@ function generatePlan({ goal, goalDate, daysPerWeek = 5, currentFitness, paceZon
     totalWeeks,
     unit,
     predictedRacePace: racePaceSecPerKm ? formatPace(racePaceSecPerKm, unit) : null,
-    baselineWeeklyKm: Math.round(baselineKm * 10) / 10,
-    peakWeeklyKm: Math.round(peakKm * 10) / 10,
+    baselineWeeklyKm: kmToUnit(baselineKm, unit),
+    peakWeeklyKm: kmToUnit(peakKm, unit),
     zones,
     weeks,
     generatedAt: new Date().toISOString(),
