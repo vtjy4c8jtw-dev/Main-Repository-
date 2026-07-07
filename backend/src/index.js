@@ -2,42 +2,34 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
-const mongoose = require('mongoose');
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 
-// Database Connection
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('✅ MongoDB connected'))
-.catch(err => console.error('❌ MongoDB connection error:', err));
-
-// Routes
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
 });
 
-// Import routes
-const weatherRoutes = require('./routes/weather');
-app.use('/api/weather', weatherRoutes);
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/athlete', require('./routes/athlete'));
+app.use('/api/activities', require('./routes/activities'));
+app.use('/api/analysis', require('./routes/analysis'));
+app.use('/api/training-plan', require('./routes/trainingPlan'));
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
+app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
+  if (err.code === 'NOT_CONNECTED') {
+    return res.status(401).json({ error: 'Not connected to Strava' });
+  }
+  console.error(err.response?.data || err.message);
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Start server
 app.listen(PORT, () => {
-  console.log(`🌤️  Weather API running on port ${PORT}`);
+  console.log(`Strava dashboard API running on port ${PORT}`);
 });

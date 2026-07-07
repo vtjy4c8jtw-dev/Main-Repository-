@@ -1,107 +1,54 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import './App.css';
+import React, { useEffect, useState } from 'react';
+import Dashboard from './pages/Dashboard';
+import ConnectStrava from './components/ConnectStrava';
+import { getAuthStatus, logout } from './api/client';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
-function App() {
-  const [weather, setWeather] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [location, setLocation] = useState({ lat: 40.7128, lon: -74.006 });
+export default function App() {
+  const [connected, setConnected] = useState(null);
+  const [theme, setTheme] = useState('system');
 
   useEffect(() => {
-    fetchWeather();
+    getAuthStatus()
+      .then((s) => setConnected(s.connected))
+      .catch(() => setConnected(false));
   }, []);
 
-  const fetchWeather = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await axios.get(
-        `${API_URL}/api/weather/current?lat=${location.lat}&lon=${location.lon}`
-      );
-      setWeather(response.data.data);
-    } catch (err) {
-      setError(err.message);
-      console.error('Error fetching weather:', err);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (theme === 'system') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', theme);
     }
-  };
+  }, [theme]);
 
-  const handleLocationChange = (newLat, newLon) => {
-    setLocation({ lat: newLat, lon: newLon });
-  };
+  async function handleLogout() {
+    await logout();
+    setConnected(false);
+  }
 
   return (
-    <div className="App">
-      <header className="header">
-        <h1>🌤️ Weather SuperComputer</h1>
-        <p>Aggregated weather forecasts for maximum accuracy</p>
+    <div className="app-shell">
+      <header className="app-header">
+        <div className="brand">
+          <span className="brand-mark">🏃</span> Run Dashboard
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <select value={theme} onChange={(e) => setTheme(e.target.value)}>
+            <option value="system">System theme</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+          {connected && (
+            <button onClick={handleLogout} title="Disconnect Strava">
+              Disconnect
+            </button>
+          )}
+        </div>
       </header>
 
-      <main className="container">
-        <div className="search-box">
-          <h2>Enter Location</h2>
-          <div className="input-group">
-            <input
-              type="number"
-              placeholder="Latitude"
-              value={location.lat}
-              onChange={(e) => handleLocationChange(parseFloat(e.target.value), location.lon)}
-              step="0.01"
-            />
-            <input
-              type="number"
-              placeholder="Longitude"
-              value={location.lon}
-              onChange={(e) => handleLocationChange(location.lat, parseFloat(e.target.value))}
-              step="0.01"
-            />
-            <button onClick={fetchWeather} disabled={loading}>
-              {loading ? 'Loading...' : 'Get Weather'}
-            </button>
-          </div>
-        </div>
-
-        {error && <div className="error-message">Error: {error}</div>}
-
-        {weather && (
-          <div className="weather-display">
-            <div className="weather-main">
-              <h2>Current Weather</h2>
-              <div className="weather-grid">
-                <div className="weather-card">
-                  <span className="label">Temperature</span>
-                  <span className="value">{weather.temperature}°C</span>
-                </div>
-                <div className="weather-card">
-                  <span className="label">Humidity</span>
-                  <span className="value">{weather.humidity}%</span>
-                </div>
-                <div className="weather-card">
-                  <span className="label">Wind Speed</span>
-                  <span className="value">{weather.windSpeed} m/s</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="sources">
-              <h3>Data Sources</h3>
-              <ul>
-                {weather.sources.map((source, idx) => (
-                  <li key={idx}>
-                    <strong>{source.name}</strong> - {source.temperature}°C, {source.humidity}% humidity
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        )}
-      </main>
+      {connected === null && <div className="empty-state">Checking Strava connection…</div>}
+      {connected === false && <ConnectStrava />}
+      {connected === true && <Dashboard />}
     </div>
   );
 }
-
-export default App;

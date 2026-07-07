@@ -1,4 +1,4 @@
-# Contributing to Weather SuperComputer
+# Contributing to Run Dashboard
 
 Thank you for your interest in contributing! Here's how to get started.
 
