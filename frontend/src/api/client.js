@@ -1,6 +1,15 @@
 import axios from 'axios';
 
-const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+// In production the backend serves this build itself (same origin), so an
+// empty base URL resolves relative to whatever host it's deployed on. Local
+// dev runs the CRA dev server separately from the API, so it needs an
+// explicit target unless overridden via REACT_APP_API_URL.
+const baseURL =
+  process.env.REACT_APP_API_URL !== undefined
+    ? process.env.REACT_APP_API_URL
+    : process.env.NODE_ENV === 'production'
+      ? ''
+      : 'http://localhost:5000';
 
 const client = axios.create({ baseURL });
 

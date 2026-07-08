@@ -56,6 +56,14 @@ npm run dev
 
 5. Open `http://localhost:3000` and click **Connect with Strava**.
 
+### Deploying it somewhere persistent
+
+Want it always-on and reachable from your phone rather than just
+`localhost`? See [`docs/DEPLOY_REPLIT.md`](./docs/DEPLOY_REPLIT.md). The
+backend can build and serve the frontend itself as a single service
+(`npm run build && npm start` from the repo root) — useful for any
+single-service host, not just Replit.
+
 ## Project Structure
 
 ```
