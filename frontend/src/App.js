@@ -4,13 +4,13 @@ import ConnectStrava from './components/ConnectStrava';
 import { getAuthStatus, logout } from './api/client';
 
 export default function App() {
-  const [connected, setConnected] = useState(null);
+  const [status, setStatus] = useState(null);
   const [theme, setTheme] = useState('system');
 
   useEffect(() => {
     getAuthStatus()
-      .then((s) => setConnected(s.connected))
-      .catch(() => setConnected(false));
+      .then(setStatus)
+      .catch(() => setStatus({ connected: false, hasImportedData: false }));
   }, []);
 
   useEffect(() => {
@@ -23,8 +23,10 @@ export default function App() {
 
   async function handleLogout() {
     await logout();
-    setConnected(false);
+    setStatus((s) => ({ ...s, connected: false }));
   }
+
+  const hasData = status && (status.connected || status.hasImportedData);
 
   return (
     <div className="app-shell">
@@ -38,7 +40,7 @@ export default function App() {
             <option value="light">Light</option>
             <option value="dark">Dark</option>
           </select>
-          {connected && (
+          {status?.connected && (
             <button onClick={handleLogout} title="Disconnect Strava">
               Disconnect
             </button>
@@ -46,9 +48,9 @@ export default function App() {
         </div>
       </header>
 
-      {connected === null && <div className="empty-state">Checking Strava connection…</div>}
-      {connected === false && <ConnectStrava />}
-      {connected === true && <Dashboard />}
+      {status === null && <div className="empty-state">Checking Strava connection…</div>}
+      {status !== null && !hasData && <ConnectStrava />}
+      {hasData && <Dashboard status={status} />}
     </div>
   );
 }

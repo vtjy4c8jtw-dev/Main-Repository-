@@ -19,4 +19,17 @@ export const createTrainingPlan = (payload) =>
   client.post('/api/training-plan', payload).then((r) => r.data);
 export const getGoalPresets = () => client.get('/api/training-plan/goals').then((r) => r.data);
 
+export const getImportStatus = () => client.get('/api/import').then((r) => r.data);
+export const uploadStravaExport = (file, onProgress) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return client
+    .post('/api/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: onProgress,
+    })
+    .then((r) => r.data);
+};
+export const clearImportedData = () => client.delete('/api/import').then((r) => r.data);
+
 export default client;

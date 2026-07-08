@@ -6,7 +6,8 @@ fitness and history.
 
 ## Features
 
-- ✅ Connect your Strava account via OAuth
+- ✅ Connect your Strava account via OAuth — or import a downloaded Strava
+  data export (`.zip`/`activities.csv`), no API app required
 - ✅ Weekly distance, pace trend, heart-rate zone distribution, and training
   load (acute:chronic ratio) charts
 - ✅ Recent activity log with pace/distance/type at a glance

@@ -21,6 +21,7 @@ app.use('/api/athlete', require('./routes/athlete'));
 app.use('/api/activities', require('./routes/activities'));
 app.use('/api/analysis', require('./routes/analysis'));
 app.use('/api/training-plan', require('./routes/trainingPlan'));
+app.use('/api/import', require('./routes/importRoute'));
 
 app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
   if (err.code === 'NOT_CONNECTED') {

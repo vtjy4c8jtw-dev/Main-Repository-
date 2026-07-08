@@ -7,7 +7,15 @@ import TrainingLoadChart from '../components/charts/TrainingLoadChart';
 import ActivityTable from '../components/ActivityTable';
 import GoalForm from '../components/GoalForm';
 import TrainingPlanView from '../components/TrainingPlanView';
-import { getAthlete, getActivities, getAnalysis, getTrainingPlan, createTrainingPlan } from '../api/client';
+import ImportPanel from '../components/ImportPanel';
+import {
+  getAthlete,
+  getActivities,
+  getAnalysis,
+  getTrainingPlan,
+  createTrainingPlan,
+  getImportStatus,
+} from '../api/client';
 import { formatDistance, formatPace } from '../utils/format';
 
 export default function Dashboard() {
@@ -15,6 +23,7 @@ export default function Dashboard() {
   const [activities, setActivities] = useState([]);
   const [analysis, setAnalysis] = useState(null);
   const [plan, setPlan] = useState(null);
+  const [importStatus, setImportStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
@@ -25,11 +34,17 @@ export default function Dashboard() {
     let cancelled = false;
     async function load() {
       try {
-        const [a, acts, an] = await Promise.all([getAthlete(), getActivities(120), getAnalysis(120)]);
+        const [a, acts, an, imp] = await Promise.all([
+          getAthlete(),
+          getActivities(120),
+          getAnalysis(120),
+          getImportStatus().catch(() => null),
+        ]);
         if (cancelled) return;
         setAthlete(a);
         setActivities(acts.activities);
         setAnalysis(an);
+        setImportStatus(imp);
         try {
           const existingPlan = await getTrainingPlan();
           if (!cancelled) setPlan(existingPlan);
@@ -136,6 +151,10 @@ export default function Dashboard() {
             <TrainingPlanView plan={plan} />
           </div>
         )}
+      </div>
+
+      <div className="card">
+        <ImportPanel importStatus={importStatus} onChange={() => window.location.reload()} />
       </div>
     </div>
   );

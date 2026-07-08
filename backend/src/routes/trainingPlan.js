@@ -5,6 +5,18 @@ const { fetchRecentRuns } = require('../services/activityService');
 const { currentFitness, paceZonesFromHeartRate, bestRecentEffort } = require('../services/analysisEngine');
 const { generatePlan, RACE_PRESETS } = require('../services/planGenerator');
 const { stravaGet } = require('../services/stravaClient');
+const importStore = require('../lib/importStore');
+
+async function resolveMeasurementPreference() {
+  try {
+    const profile = await stravaGet('/athlete');
+    return profile.measurement_preference;
+  } catch (err) {
+    if (err.code !== 'NOT_CONNECTED') throw err;
+    const imported = importStore.read();
+    return imported && imported.detectedUnit === 'mi' ? 'feet' : 'meters';
+  }
+}
 
 const router = express.Router();
 const PLAN_PATH = path.join(__dirname, '..', 'data', 'plan.json');
@@ -29,9 +41,9 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ error: 'goal and goalDate are required' });
     }
 
-    const [runs, profile, zoneData] = await Promise.all([
+    const [runs, measurementPreference, zoneData] = await Promise.all([
       fetchRecentRuns({ days: 120 }),
-      stravaGet('/athlete'),
+      resolveMeasurementPreference(),
       stravaGet('/athlete/zones').catch(() => null),
     ]);
     const hrZones =
@@ -46,7 +58,7 @@ router.post('/', async (req, res, next) => {
       currentFitness: currentFitness(runs),
       paceZones: paceZonesFromHeartRate(runs, hrZones),
       bestRecentEffort: bestRecentEffort(runs),
-      measurementPreference: profile.measurement_preference,
+      measurementPreference,
     });
 
     fs.mkdirSync(path.dirname(PLAN_PATH), { recursive: true });

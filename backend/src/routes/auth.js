@@ -1,6 +1,7 @@
 const express = require('express');
 const { getAuthorizeUrl, exchangeCodeForToken } = require('../services/stravaClient');
 const tokenStore = require('../lib/tokenStore');
+const importStore = require('../lib/importStore');
 const { invalidateCache } = require('../services/activityService');
 
 const router = express.Router();
@@ -30,7 +31,8 @@ router.get('/callback', async (req, res) => {
 
 router.get('/status', (req, res) => {
   const tokens = tokenStore.read();
-  res.json({ connected: Boolean(tokens) });
+  const imported = importStore.read();
+  res.json({ connected: Boolean(tokens), hasImportedData: Boolean(imported) });
 });
 
 router.post('/logout', (req, res) => {
