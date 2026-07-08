@@ -14,7 +14,7 @@ const ZONE_COLORS = [
 ];
 const ZONE_LABELS = ['Z1 Recovery', 'Z2 Easy', 'Z3 Tempo', 'Z4 Threshold', 'Z5 VO2 Max'];
 
-export default function HrZoneDonut({ zones, runsWithHr }) {
+export default function HrZoneDonut({ zones, runsWithHr, estimated }) {
   const [hover, setHover] = useState(null);
   const circumference = 2 * Math.PI * R;
 
@@ -80,6 +80,11 @@ export default function HrZoneDonut({ zones, runsWithHr }) {
             {s.label} — {s.percent}% ({s.minutes}m)
           </div>
         ))}
+        {estimated && (
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+            Estimated from % of max heart rate — connect Strava for your real custom zones.
+          </div>
+        )}
       </div>
     </div>
   );

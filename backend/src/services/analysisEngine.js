@@ -61,21 +61,36 @@ function paceTrend(runs) {
 
 // Bucket each run's average heart rate into the athlete's 5 HR zones and
 // attribute the run's moving time to that zone as an estimate of zone distribution.
+// Standard %-of-max-HR zone bands, used when the athlete's custom Strava HR
+// zones aren't available (e.g. imported data with no live connection) but
+// individual runs still carry a heart rate reading.
+const DEFAULT_HR_ZONE_FRACTIONS = [0, 0.6, 0.7, 0.8, 0.9, 1];
+
+function estimateHrZonesFromRuns(runs) {
+  const maxObserved = Math.max(0, ...runs.map((r) => r.maxHeartrate || r.avgHeartrate || 0));
+  if (!maxObserved) return null;
+  const bounds = DEFAULT_HR_ZONE_FRACTIONS.map((f) => Math.round(f * maxObserved));
+  return bounds.slice(0, -1).map((min, i) => ({
+    min,
+    max: i === bounds.length - 2 ? null : bounds[i + 1],
+  }));
+}
+
 function heartRateZoneDistribution(runs, hrZones) {
+  const zones = hrZones && hrZones.length ? hrZones : estimateHrZonesFromRuns(runs);
   const zoneSeconds = [0, 0, 0, 0, 0];
   let runsWithHr = 0;
   for (const run of runs) {
-    if (!run.avgHeartrate || !hrZones || !hrZones.length) continue;
+    if (!run.avgHeartrate || !zones || !zones.length) continue;
     runsWithHr += 1;
-    const zoneIdx = hrZones.findIndex(
-      (z) => run.avgHeartrate >= z.min && (z.max == null || run.avgHeartrate <= z.max)
-    );
-    const idx = zoneIdx === -1 ? hrZones.length - 1 : zoneIdx;
+    const zoneIdx = zones.findIndex((z) => run.avgHeartrate >= z.min && (z.max == null || run.avgHeartrate <= z.max));
+    const idx = zoneIdx === -1 ? zones.length - 1 : zoneIdx;
     zoneSeconds[idx] += run.movingTime;
   }
   const totalSeconds = zoneSeconds.reduce((a, b) => a + b, 0);
   return {
     runsWithHr,
+    estimated: !(hrZones && hrZones.length),
     zones: zoneSeconds.map((seconds, i) => ({
       zone: i + 1,
       seconds,
@@ -180,7 +195,35 @@ function currentFitness(runs) {
 // interpolated from whichever zone does have data, using fixed physiological
 // ratios (recovery slower than easy, tempo/threshold/VO2max progressively
 // faster).
+// Fallback for athletes with no HR zone boundaries available (common for
+// imported data, since custom zones aren't part of the export and require a
+// live connection) — or no HR data at all. Buckets runs by percentile of
+// their own pace distribution instead: slowest ~10% -> Recovery, down to
+// fastest ~5% -> VO2 Max.
+const DISTRIBUTION_ZONE_PERCENTILES = [90, 65, 40, 20, 5];
+
+function percentileOf(sortedAscending, p) {
+  const idx = Math.min(sortedAscending.length - 1, Math.max(0, Math.round((p / 100) * (sortedAscending.length - 1))));
+  return sortedAscending[idx];
+}
+
+function paceZonesFromDistribution(runs) {
+  const paces = runs
+    .filter((r) => r.distance >= 1000 && r.movingTime > 0)
+    .map((r) => paceSecPerKm(r.distance, r.movingTime))
+    .sort((a, b) => a - b); // ascending: fastest first
+
+  return DISTRIBUTION_ZONE_PERCENTILES.map((p, i) => ({
+    zone: i + 1,
+    label: PACE_ZONE_LABELS[i] || `Zone ${i + 1}`,
+    avgPaceSecPerKm: paces.length ? Math.round(percentileOf(paces, p)) : null,
+    estimated: true,
+  }));
+}
+
 function paceZonesFromHeartRate(runs, hrZones) {
+  if (!hrZones || !hrZones.length) return paceZonesFromDistribution(runs);
+
   const overallPace = paceSecPerKm(
     runs.reduce((s, r) => s + r.distance, 0),
     runs.reduce((s, r) => s + r.movingTime, 0)

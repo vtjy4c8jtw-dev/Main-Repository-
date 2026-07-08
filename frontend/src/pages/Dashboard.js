@@ -118,19 +118,23 @@ export default function Dashboard() {
 
       <div className="grid-2">
         <div className="card">
-          <div className="card-title">Weekly distance</div>
-          <WeeklyVolumeChart weeks={analysis.weeklySummaries} unit={unit} />
+          <div className="card-title">Weekly distance (last 52 weeks)</div>
+          <WeeklyVolumeChart weeks={analysis.weeklySummaries.slice(-52)} unit={unit} />
         </div>
         <div className="card">
           <div className="card-title">Heart rate zones (recent runs)</div>
-          <HrZoneDonut zones={analysis.hrZoneDistribution.zones} runsWithHr={analysis.hrZoneDistribution.runsWithHr} />
+          <HrZoneDonut
+            zones={analysis.hrZoneDistribution.zones}
+            runsWithHr={analysis.hrZoneDistribution.runsWithHr}
+            estimated={analysis.hrZoneDistribution.estimated}
+          />
         </div>
       </div>
 
       <div className="grid-2">
         <div className="card">
-          <div className="card-title">Pace trend</div>
-          <PaceTrendChart weeks={analysis.weeklySummaries} unit={unit} />
+          <div className="card-title">Pace trend (last 52 weeks)</div>
+          <PaceTrendChart weeks={analysis.weeklySummaries.slice(-52)} unit={unit} />
         </div>
         <div className="card">
           <div className="card-title">Training load (ACWR)</div>

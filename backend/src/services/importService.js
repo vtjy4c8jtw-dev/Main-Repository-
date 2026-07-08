@@ -54,12 +54,16 @@ function buildHeaderIndex(headerRow) {
   return index;
 }
 
+// Strava's export duplicates several headers (e.g. two "Distance" columns):
+// an early rounded summary figure, then a precise one later in the row
+// alongside Moving Time/Average Speed. We prefer the last non-empty match,
+// which is consistently the more precise, API-native value.
 function getField(row, headerIndex, candidateNames) {
   for (const name of candidateNames) {
     const indices = headerIndex[name];
     if (!indices) continue;
-    for (const idx of indices) {
-      const value = row[idx];
+    for (let i = indices.length - 1; i >= 0; i -= 1) {
+      const value = row[indices[i]];
       if (value != null && String(value).trim() !== '') return String(value).trim();
     }
   }
