@@ -1,55 +1,47 @@
-# Weather API Setup Guide
+# Strava API Setup
 
-## OpenWeatherMap
+The dashboard authenticates with your own Strava account via OAuth. You need
+a Strava API application to get a client ID/secret.
 
-1. Visit https://openweathermap.org/api
-2. Sign up for a free account
-3. Generate an API key from your account dashboard
-4. Add to `.env`: `OPENWEATHER_API_KEY=your_key`
+1. Log in to Strava and go to https://www.strava.com/settings/api
+2. Create an application:
+   - **Application Name**: anything, e.g. "Run Dashboard"
+   - **Category**: Training
+   - **Website**: `http://localhost:3000`
+   - **Authorization Callback Domain**: `localhost`
+3. Copy the **Client ID** and **Client Secret** shown on the application page.
+4. Put them in your `.env` file at the repo root:
+   ```
+   STRAVA_CLIENT_ID=your_client_id
+   STRAVA_CLIENT_SECRET=your_client_secret
+   ```
+5. Start the app and click **Connect with Strava** — you'll be redirected to
+   Strava to authorize the `read`, `activity:read_all`, and
+   `profile:read_all` scopes, then redirected back to the dashboard.
 
-### Usage in Code
-```javascript
-const response = await fetch(
-  `https://api.openweathermap.org/data/2.5/forecast?q=London&appid=${OPENWEATHER_API_KEY}`
-);
-```
+Tokens are stored locally in `backend/src/data/tokens.json` (gitignored) and
+refreshed automatically when they expire. To disconnect, use the
+**Disconnect** button in the dashboard header, which deletes the stored
+tokens.
 
-## WeatherAPI
+## Alternative: import a Strava data export (no API app needed)
 
-1. Visit https://www.weatherapi.com/
-2. Sign up for free
-3. Copy your API key from the dashboard
-4. Add to `.env`: `WEATHER_API_KEY=your_key`
+If you don't want to set up a Strava API application, you can instead
+download your full account archive and import it directly:
 
-### Usage in Code
-```javascript
-const response = await axios.get(
-  `https://api.weatherapi.com/v1/forecast.json?key=${WEATHER_API_KEY}&q=London&days=10`
-);
-```
+1. In Strava, go to **Settings → My Account → Download or Delete Your
+   Account → Request Your Archive**.
+2. Strava emails you a link once it's ready (minutes to ~24 hours). Download
+   the resulting `.zip`.
+3. On the dashboard's connect screen (or the "Import a Strava data export"
+   card once you're in), upload the `.zip` — or just `activities.csv` if
+   you've already extracted it.
 
-## NOAA
-
-1. NOAA doesn't require authentication for basic requests
-2. Visit https://www.weather.gov/documentation/services-web-api
-3. Read the documentation
-
-### Usage in Code
-```javascript
-const gridResponse = await fetch(
-  `https://api.weather.gov/points/39.7392,-104.9903`
-);
-const gridData = await gridResponse.json();
-const forecastResponse = await fetch(gridData.properties.forecast);
-const forecast = await forecastResponse.json();
-```
-
-## Aggregation Strategy
-
-The backend will:
-1. Call all three APIs for a given location
-2. Parse and normalize the data
-3. Weight the forecasts (optional: by source reliability)
-4. Return the aggregated forecast to the frontend
-
-See `backend/src/services/weatherAggregator.js` for implementation details.
+The importer reads `activities.csv`, keeps only runs, and merges them with
+any live-connected data (de-duplicated by activity ID). Distance units in
+that file are inconsistent across Strava's export versions, so the importer
+auto-detects meters vs. km vs. miles by checking which interpretation
+produces plausible running paces across your file — the upload response
+tells you which unit it picked. Imported data is stored in
+`backend/src/data/imports.json` (gitignored); clear it any time with the
+**Clear imported data** button.

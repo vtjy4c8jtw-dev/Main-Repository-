@@ -1,7 +1,7 @@
 {
-  "name": "weather-supercomputer",
+  "name": "strava-running-dashboard",
   "version": "1.0.0",
-  "description": "Unified weather forecasting platform aggregating multiple weather services",
+  "description": "A running dashboard that analyzes your Strava data and builds personalized training plans",
   "main": "backend/src/index.js",
   "scripts": {
     "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install",
@@ -11,13 +11,14 @@
     "build": "concurrently \"npm run build:backend\" \"npm run build:frontend\"",
     "build:backend": "cd backend && npm run build",
     "build:frontend": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
     "test": "concurrently \"npm run test:backend\" \"npm run test:frontend\"",
     "test:backend": "cd backend && npm run test",
     "test:frontend": "cd frontend && npm run test",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down"
   },
-  "keywords": ["weather", "forecast", "aggregation", "api"],
+  "keywords": ["strava", "running", "training-plan", "dashboard", "analytics"],
   "author": "vtjy4c8jtw-dev",
   "license": "MIT",
   "devDependencies": {

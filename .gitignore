@@ -41,3 +41,6 @@ coverage/
 *.pid
 *.seed
 *.pid.lock
+
+# Local Strava tokens / generated training plan
+backend/src/data/*.json

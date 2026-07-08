@@ -1,0 +1,14 @@
+run = "npm run build && npm start"
+entrypoint = "backend/src/index.js"
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+deploymentTarget = "gce"
+build = ["sh", "-c", "npm run build"]
+run = ["sh", "-c", "npm start"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
